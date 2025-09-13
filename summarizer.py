@@ -13,11 +13,11 @@ def summarize_text(text: str, task: str = "Summarize") -> str:
         "Extract Method": "What method or approach is proposed in the following abstract?",
         "Extract Contribution": "What is the main contribution of the following research?",
         "Structured Summary (All)": (
-            "Please extract the following items from the abstract:\n"
-            "1. Research Question\n"
-            "2. Method\n"
-            "3. Main Contribution\n\n"
-            "Format each answer as a numbered bullet point.\n"
+            "Please read the abstract and provide the following:\n"
+            "- A short description of the main research question.\n"
+            "- A brief explanation of the method used.\n"
+            "- A summary of the main contribution.\n"
+            "Format each answer as a numbered bullet point.\n"        
         )
     }
 
@@ -26,7 +26,7 @@ def summarize_text(text: str, task: str = "Summarize") -> str:
         "Extract Research Question": (20, 50),
         "Extract Method": (30, 80),
         "Extract Contribution": (30, 80),
-        "Structured Summary (All)": (60, 180)
+        "Structured Summary (All)": (60, 200)
     }
 
     prompt = task_prompt_map.get(task, task_prompt_map["Summarize"])
