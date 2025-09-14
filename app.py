@@ -1,16 +1,13 @@
-# app.py
-
 import streamlit as st
 from arxiv_scraper import get_recent_arxiv_papers, keyword_filter, ARXIV_CATEGORIES
-
 from summarizer import summarize_text
+from rag_summarizer import rag_answer
+from chunker import chunk_text
 
-# --- Page config ---
 st.set_page_config(page_title="ArxivInsight", layout="wide")
 st.title("ArxivInsight: LLM-Powered Paper Summarizer")
-st.markdown("Enter a keyword and select a category to fetch and summarize recent arXiv papers.")
 
-# --- Inputs ---
+# --- UI Inputs ---
 query = st.text_input("Keyword (exact phrase match)", value="pose estimation")
 
 category_label = st.selectbox("Select arXiv Category", options=list(ARXIV_CATEGORIES.keys()), index=0)
@@ -30,33 +27,32 @@ task_type = st.selectbox(
     ]
 )
 
-# --- Helper for multiple categories ---
-MULTI_CATEGORY_DEFAULTS = ["cs.CV", "cs.LG", "cs.CL", "cs.AI", "stat.ML"]
+use_rag = st.checkbox("Use Retrieval-Augmented Generation (RAG)", value=False)
 
-def get_combined_category_papers(categories, max_per_cat=100):
-    combined = []
-    for cat in categories:
-        papers = get_recent_arxiv_papers(max_results=max_per_cat, category=cat)
-        combined.extend(papers)
-    return combined
-
-# --- Run ---
+# --- Main Logic ---
 if st.button("Fetch and Summarize"):
-    with st.spinner("Searching arXiv and summarizing..."):
+    with st.spinner("Fetching papers..."):
         if category_code is None:
-            # All Fields: pull from multiple sub-categories
-            all_papers = get_combined_category_papers(MULTI_CATEGORY_DEFAULTS, max_per_cat=max_fetch)
+            from retriever import MULTI_CATEGORY_DEFAULTS  # list of fallback categories
+            all_papers = []
+            for cat in MULTI_CATEGORY_DEFAULTS:
+                all_papers += get_recent_arxiv_papers(max_results=max_fetch, category=cat)
         else:
-            # Specific category
             all_papers = get_recent_arxiv_papers(max_results=max_fetch, category=category_code)
 
         matched_papers = keyword_filter(all_papers, query, top_k=max_display)
-        total_matches = len(matched_papers)
 
-        if total_matches == 0:
-            st.warning("No matching papers found for that keyword.")
+        if not matched_papers:
+            st.warning("No matching papers found.")
         else:
-            st.success(f"Found {total_matches} matching paper(s).")
+            st.success(f"Found {len(matched_papers)} matching paper(s).")
+
+            # Prepare all chunks for RAG
+            all_chunks = []
+            for paper in matched_papers:
+                chunks = chunk_text(paper["summary"], chunk_size=2)
+                all_chunks.extend(chunks)
+
             for paper in matched_papers:
                 st.markdown("---")
                 st.subheader(paper["title"])
@@ -65,6 +61,10 @@ if st.button("Fetch and Summarize"):
                 st.markdown("**Abstract:**")
                 st.write(paper["summary"])
 
-                with st.expander("LLM Summary", expanded=True):
-                    summary = summarize_text(paper["summary"], task=task_type)
-                    st.success(summary)
+                with st.expander("LLM Output", expanded=True):
+                    if use_rag:
+                        st.markdown("*Using RAG over multiple papers...*")
+                        response = rag_answer(query, all_chunks, top_k=5, task=task_type)
+                    else:
+                        response = summarize_text(paper["summary"], task=task_type)
+                    st.success(response)
