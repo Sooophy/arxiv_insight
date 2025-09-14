@@ -3,3 +3,5 @@ feedparser
 transformers
 torch
 accelerate
+sentence-transformers
+faiss-cpu
