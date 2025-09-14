@@ -2,3 +2,4 @@ streamlit
 feedparser
 transformers
 torch
+accelerate
