@@ -1,5 +1,3 @@
-# chunker.py
-
 from typing import List
 import re
 

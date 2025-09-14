@@ -45,8 +45,10 @@ def summarize_text(text: str, task: str = "Summarize") -> str:
 
 if __name__ == "__main__":
     input_text = (
-        "Large language models (LLMs) have shown significant promise across many NLP tasks. "
-        "We will use it to keep track of the new artical on arxiv. "
+        "Large language models are powerful tools. "
+        "They have shown impressive performance on various NLP tasks. "
+        "However, their ability to reason across multiple documents is limited. "
+        "This paper proposes a retrieval-augmented method for multi-document question answering."
     )
 
     print("Original:")
